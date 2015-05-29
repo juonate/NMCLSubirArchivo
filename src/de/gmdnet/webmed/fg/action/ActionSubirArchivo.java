@@ -6,8 +6,8 @@ package de.gmdnet.webmed.fg.action;
 
 import de.gmdnet.webmed.fg.action.tools.MultipartUtility;
 import de.gmdnet.webmed.fg.FgComponent;
-import de.gmdnet.webmed.fg.action.tools.SaveImage;
 import de.gmdnet.webmed.internal.LoggerNames;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -39,64 +39,97 @@ public class ActionSubirArchivo extends FgActionAdapter {
     private static final Long serialVersionUID = Long.valueOf(-76538273649872413L);
     String Servlet = null;
     String filePath = null;
-    String pathFile = null;
-    String dateFile = null;
 
     public ActionSubirArchivo() {
         registerActionMethod("SubirArchivo", new String[]{"pathFileSource", "Servlet", "pathFileTarget", "dateFileTarget"});
     }
 
-    public void methodSubirArchivo(Hashtable<String, String> inputData, FgComponent requestingElement) {
+    public void methodSubirArchivo(Hashtable<String, String> inputData, FgComponent requestingElement) throws MalformedURLException, TransformerConfigurationException, TransformerException, ParserConfigurationException, SAXException {
 
         Servlet = parseParam(inputData, "Servlet");
         filePath = parseParam(inputData, "pathFileSource");
-        pathFile = (String) inputData.get("pathFileTarget");
-        dateFile = (String) inputData.get("dateFileTarget");
+        String pathFile = (String) inputData.get("pathFileTarget");
+        String dateFile = (String) inputData.get("dateFileTarget");
+        
+//        Servlet = "http://localhost:8080/NMCLUploadArchivoServlet/uploadFile";
+//        filePath = "C:\\Users\\Juan\\Documents\\Cualquieranomas.pdf";
+//        String pathFile = "PATH_FILE";
+//        String dateFile = "DATE_FILE";
+//
+//        try {
+//            String charset = "UTF-8";
+//            File uploadFile1 = new File(filePath);
+//            String requestURL = Servlet;
+//            String xmlResponse = null;
+//            MultipartUtility multipart = new MultipartUtility(requestURL, charset);
+//            multipart.addFilePart("file1", uploadFile1);
+//            List<String> response = multipart.finish();
+//
+//            for (String line : response) {
+//                xmlResponse = line;
+//            }
+//            DocumentBuilderFactory fctr = DocumentBuilderFactory.newInstance();
+//            DocumentBuilder bldr = fctr.newDocumentBuilder();
+//            InputSource insrc = new InputSource(new StringReader(xmlResponse));
+//            Document doc = bldr.parse(insrc);
+//            NodeList fechaList = doc.getElementsByTagName("fechaText");
+//            NodeList rutaList = doc.getElementsByTagName("rutaArchivo");
+//
+//            String fechaArchivo = fechaList.item(0).getChildNodes().item(0).getNodeValue();
+//            String rutaArchivo = rutaList.item(0).getChildNodes().item(0).getNodeValue();
 
-        try {
-            String charset = "UTF-8";
-            File uploadFile1 = new File(filePath);
-            String requestURL = Servlet;
-            String xmlResponse = null;
-            MultipartUtility multipart = new MultipartUtility(requestURL, charset);
-            multipart.addFilePart("file1", uploadFile1);
-            List<String> response = multipart.finish();
-
-            for (String line : response) {
-                xmlResponse = line;
-            }
-            DocumentBuilderFactory fctr = DocumentBuilderFactory.newInstance();
-            DocumentBuilder bldr = fctr.newDocumentBuilder();
-            InputSource insrc = new InputSource(new StringReader(xmlResponse));
-            Document doc = bldr.parse(insrc);
-            NodeList fechaList = doc.getElementsByTagName("fechaText");
-            NodeList rutaList = doc.getElementsByTagName("rutaArchivo");
-
-            String fechaArchivo = fechaList.item(0).getChildNodes().item(0).getNodeValue();
-            String rutaArchivo = rutaList.item(0).getChildNodes().item(0).getNodeValue();
-            
-            SaveImage sv = new SaveImage(rutaArchivo, fechaArchivo);
-            sv.enviarImagen(Servlet, filePath);
-            
-            imprimir("Respuesta Servlet");
-            imprimir("Fecha archivo: " + fechaArchivo);
-            imprimir("Ruta archivo: " + rutaArchivo);
-        } catch (MalformedURLException ex) {
-            java.util.logging.Logger.getLogger(ActionSubirArchivo.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (TransformerConfigurationException ex) {
-            java.util.logging.Logger.getLogger(ActionSubirArchivo.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (TransformerException ex) {
-            java.util.logging.Logger.getLogger(ActionSubirArchivo.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ParserConfigurationException ex) {
-            java.util.logging.Logger.getLogger(ActionSubirArchivo.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SAXException ex) {
-            java.util.logging.Logger.getLogger(ActionSubirArchivo.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(ActionSubirArchivo.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        SaveImage sv = new SaveImage();
+        sv.enviarImagen(Servlet, filePath, pathFile, dateFile);
     }
 
     public static void imprimir(Object o) {
         System.out.println(o);
     }
+//    public static void main(String args[]) throws SAXException, TransformerConfigurationException, TransformerException, ParserConfigurationException, MalformedURLException {
+//        ActionSubirArchivo scan = new ActionSubirArchivo();
+//        scan.methodSubirArchivo(null, null);
+//    }
+    
+    public class SaveImage {
+
+        static final int BUFFER_SIZE = 16384;
+
+        public void enviarImagen(String Servlet, String filePath, String pathFile, String dateFile) throws MalformedURLException, TransformerConfigurationException, TransformerException, ParserConfigurationException, SAXException {
+            String charset = "UTF-8";
+            File uploadFile1 = new File(filePath);
+            String requestURL = Servlet;
+            String xmlResponse = null;
+
+            try {
+                MultipartUtility multipart = new MultipartUtility(requestURL, charset);
+                multipart.addFilePart("file1", uploadFile1);
+                List<String> response = multipart.finish();
+                
+                
+                for (String line : response) {
+                    xmlResponse = line;
+                }
+                DocumentBuilderFactory fctr = DocumentBuilderFactory.newInstance();
+                DocumentBuilder bldr = fctr.newDocumentBuilder();
+                InputSource insrc = new InputSource(new StringReader(xmlResponse));
+                Document doc = bldr.parse(insrc);
+                NodeList fechaList = doc.getElementsByTagName("fechaText");
+                NodeList rutaList = doc.getElementsByTagName("rutaArchivo");
+                
+                String fechaArchivo = fechaList.item(0).getChildNodes().item(0).getNodeValue();
+                String rutaArchivo = rutaList.item(0).getChildNodes().item(0).getNodeValue();
+                imprimir("SERVER REPLIED:");
+                imprimir(fechaArchivo + " " + rutaArchivo);
+                
+                getForm().setValue(pathFile, rutaArchivo);
+                getForm().setValue(dateFile, fechaArchivo);
+            } catch (IOException ex) {
+                System.err.println(ex);
+            }
+            
+        }
+        
+        
+    }
+    
 }
